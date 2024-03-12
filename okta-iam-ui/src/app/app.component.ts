@@ -1,13 +1,37 @@
-import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { OktaAuthModule, OKTA_CONFIG } from '@okta/okta-angular';
+import { Component, Inject, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+import { OktaAuthStateService, OKTA_AUTH } from '@okta/okta-angular';
+import { AuthState, OktaAuth } from '@okta/okta-auth-js';
+import { filter, map, Observable } from 'rxjs';
 
 @Component({
   selector: 'app-root',
-  standalone: true,
-  imports: [RouterOutlet],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   title = 'okta-iam-ui';
+  public isAuthenticated$!: Observable<boolean>;
+
+  constructor(private _router: Router, private _oktaStateService: OktaAuthStateService, @Inject(OKTA_AUTH) private _oktaAuth: OktaAuth) { }
+
+  public ngOnInit(): void {
+    this.isAuthenticated$ = this._oktaStateService.authState$.pipe(
+      filter((s: AuthState) => !!s),
+      map((s: AuthState) => s.isAuthenticated ?? false)
+    );
+  }
+
+  public async signIn() : Promise<void> {
+    await this._oktaAuth.signInWithRedirect();
+  }
+
+  public async signOut(): Promise<void> {
+    await this._oktaAuth.signOut();
+  }
+  
 }
+
+
